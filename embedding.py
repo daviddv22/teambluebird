@@ -94,7 +94,7 @@ def formality_loss(dataset):
 
 
 # data = load_dataset("liar")
-dataset, train_x, train_y, raw_x, raw_y = split_dataset()
+dataset, train_x, train_y, test_x, test_y, raw_x, raw_y = split_dataset()
 # print(data[0])
 text = "After stealing money from the bank vault, the bank robber was seen " \
        "fishing on the Mississippi river bank."
