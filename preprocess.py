@@ -4,6 +4,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 from datasetClass import FakeNewsDataset
+import json
 
 # save the dataset to a file to be used in other files
 # would be nice to save as something like a json file
@@ -16,15 +17,17 @@ def split_dataset():
     dataset = dataset.select_columns(["label", "statement"]) 
 
     # split the dataset into train and test manually
-    train = dataset["train"].train_test_split(test_size=0.2, shuffle=True)
-    test = dataset["train"].train_test_split(test_size=0.2, shuffle=True)
+    data_split = dataset["train"].train_test_split(test_size=0.2, shuffle=True)
 
     # create a new dataset with the train and test datasets
-    train_x = train["train"]["statement"]
-    train_y = train["train"]["label"]
-
-    test_x = test["train"]["statement"]
-    test_y = test["train"]["label"]
+    train_x = data_split["train"]["statement"]
+    train_y_ful = data_split["train"]["label"]
+    # label 0-1: 0 false 1 true
+    train_y = [0 if label <= 2 else 1 for label in train_y_ful]
+    
+    test_x = data_split["test"]["statement"]
+    test_y_ful = data_split["test"]["label"]
+    test_y = [0 if label <= 2 else 1 for label in test_y_ful]
 
     # tokenize the sentences into tensors
     raw_x = train_x
@@ -44,5 +47,20 @@ def split_dataset():
 
     # raw_text, train_y, test_x, test_y = split_dataset()
     # dataset = FakeNewsDataset(train_x, tokenizer)
-    return dataset, train_x, train_y, raw_x, raw_y
+     # save the data to a JSON file
+    data = {
+        "train_x": train_x.tolist(),
+        "train_y": train_y,
+        "test_x": test_x.tolist(),
+        "test_y": test_y,
+        "raw_x": raw_x,
+        "raw_y": raw_y
+    }
+    with open("data.json", "w") as f:
+        json.dump(data, f)
+
+    # return the data
+    return dataset, train_x, train_y, test_x, test_y, raw_x, raw_y
+
+
 
