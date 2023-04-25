@@ -1,6 +1,7 @@
    
-from transformers import AutoTokenizer, AutoModelForMaskedLM, BertForMaskedLM, LineByLineTextDataset, DataCollatorForLanguageModeling, AutoModelForSequenceClassification, \
+from transformers import AutoTokenizer, DataCollatorForLanguageModeling, AutoModelForSequenceClassification, \
 BertModel
+from sentence_transformers import SentenceTransformer
 from datasets import load_dataset
 from preprocess import split_dataset
 import torch
@@ -13,7 +14,7 @@ from tqdm import tqdm
 def train_embedding_generator(dataset):
     # gets the tokenizer and pretrained model
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states = True,)
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 
     # for fine tuning if we decide to do so
@@ -49,28 +50,30 @@ def train_embedding_generator(dataset):
     # gets the embeddings for the sentence (work in progress)
     toreturn = []
     for sentence in dataset:
-        marked_text = "[CLS] " + sentence + " [SEP]"
-        tokenized_text = tokenizer.tokenize(marked_text)
-        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-        segments_ids = [1] * len(tokenized_text)
-        tokens_tensor = torch.tensor([indexed_tokens])
-        segments_tensors = torch.tensor([segments_ids])
+        toreturn.append(model.encode(sentence))
+        # marked_text = "[CLS] " + sentence + " [SEP]"
+        # tokenized_text = tokenizer.tokenize(marked_text)
+        # indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+        # segments_ids = [1] * len(tokenized_text)
+        # tokens_tensor = torch.tensor([indexed_tokens])
+        # segments_tensors = torch.tensor([segments_ids])
 
-        with torch.no_grad():
-            outputs = model(tokens_tensor, segments_tensors)
-            hidden_states = outputs[2]
-            # layer_i = 0
-            # batch_i = 0
-            # token_i = 0
+        # with torch.no_grad():
+        #     outputs = model(tokens_tensor, segments_tensors)
+        #     hidden_states = outputs[2]
+        #     # layer_i = 0
+        #     # batch_i = 0
+        #     # token_i = 0
 
-        token_vecs = hidden_states[-2][0]
-        token_embeddings = torch.stack(hidden_states, dim=0)
-        token_embeddings = torch.squeeze(token_embeddings, dim=1)
-        token_embeddings = token_embeddings.permute(1,0,2)
+        # token_vecs = hidden_states[-2][0]
+        # token_embeddings = torch.stack(hidden_states, dim=0)
+        # token_embeddings = torch.squeeze(token_embeddings, dim=1)
+        # token_embeddings = token_embeddings.permute(1,0,2)
 
-        sentence_embedding = torch.mean(token_vecs, dim=0).numpy()
-        toreturn.append(sentence_embedding)
+        # sentence_embedding = torch.mean(token_vecs, dim=0).numpy()
+        # toreturn.append(sentence_embedding)
 
+    print(toreturn[0:2])
     return toreturn
 
 def formality_loss(dataset):
@@ -113,26 +116,32 @@ model_ip = torch.cat((torch.tensor(embedding) , formality_score), 1)
 
 # this doesnt work
 mlp = nn.Sequential(OrderedDict([
-    ('dense1', nn.Linear(769, 100)),
+    ('dense1', nn.Linear(385, 256)),
     ('act1', nn.ReLU()),
-    ('dense2', nn.Linear(100, 50)),
+    ('dense2', nn.Linear(256, 128)),
     ('act2', nn.ReLU()),
-    ('output', nn.Linear(50, 1)),
+    ('dense4', nn.Linear(128, 64)),
+    ('act4', nn.ReLU()),
+    ('dense3', nn.Linear(64, 16)),
+    ('act3', nn.ReLU()),
+    ('output', nn.Linear(16, 1)),
     ('outact', nn.Softmax(1)),
 ]))
 
 loss_fn = nn.CrossEntropyLoss()
 # loss = loss_fn(model_ip, torch.tensor([0]))
 
-optimizer = torch.optim.Adam(mlp.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(mlp.parameters(), lr=0.05)
 
-num_epochs = 10
+num_epochs = 100
 for n in range(num_epochs):
     y_pred = mlp(model_ip)
     # print(y_pred.shape)
     labels = list(map(lambda x: float(1) if x == float(1) or x == float(2) else float(0), list(map(float, raw_y[:100]))))
     labels = torch.tensor(labels).reshape(100, 1)
-    # print(labels)
+    # for i in range(len(y_pred)):
+    #     print(y_pred[i], labels[i])
+    # print(y_pred)
     loss = loss_fn(y_pred, labels)
     optimizer.zero_grad()
     loss.backward()
