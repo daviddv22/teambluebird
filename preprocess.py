@@ -32,6 +32,8 @@ def split_dataset():
     # tokenize the sentences into tensors
     raw_x = train_x
     raw_y = train_y
+    raw_test_x = test_x
+    raw_test_y = test_y
     tokenizer = Tokenizer(num_words=100000, oov_token="<OOV>")
     tokenizer.fit_on_texts(train_x)
     train_x = tokenizer.texts_to_sequences(train_x)
@@ -60,7 +62,7 @@ def split_dataset():
         json.dump(data, f)
 
     # return the data
-    return dataset, train_x, train_y, test_x, test_y, raw_x, raw_y
+    return dataset, train_x, train_y, test_x, test_y, raw_x, raw_y, raw_test_x, raw_test_y
 
 
 
