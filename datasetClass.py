@@ -1,7 +1,22 @@
 import torch
 # not needed I dont think
 class FakeNewsDataset(torch.utils.data.Dataset):
+    """
+    A dataset of fake news examples that can be used for training and testing the models.
+
+    Args:
+        raw_data (list): The raw data to be loaded.
+        tokenizer (Tokenizer): The tokenizer used to tokenize the text.
+        """
     def __init__(self, raw_data, tokenizer):
+        """
+        Initializes the dataset with raw data and a tokenizer.
+
+        Args:
+            raw_data (list): The raw data to be loaded.
+            tokenizer (Tokenizer): The tokenizer used to tokenize the text.
+        """
+
         super(FakeNewsDataset, self).__init__()
         self.data = raw_data
         self.tokenizer = tokenizer

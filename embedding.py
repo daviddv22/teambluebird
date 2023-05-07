@@ -16,6 +16,16 @@ import numpy as np
 
 
 def sentiment_scores(dataset):
+    """
+    This function takes in a list of sentences and uses the twitter-roberta-base-sentiment pre-trained model
+    from Hugging Face to predict the sentiment scores (positive, negative, or neutral) for each sentence
+    
+    Parameters:
+    dataset (list): A list of sentences to analyze the sentiment of.
+    
+    Returns:
+    torch.tensor: A tensor containing the predicted sentiment scores for each sentence in the dataset.
+    """
 
     tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
 
@@ -30,6 +40,16 @@ def sentiment_scores(dataset):
     return torch.tensor(toreturn)
 
 def train_embedding_generator(dataset):
+    """
+    generates sentence embeddings using a pretrained model called paraphrase-MiniLM-L6-v2.
+
+    Args:
+
+    dataset (list): A list of strings containing the sentences to be embedded.
+    Returns:
+
+    toreturn (list): A list of numpy arrays, where each array is a sentence embedding of the corresponding input sentence.
+    """
     # gets the tokenizer and pretrained model
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
@@ -41,6 +61,18 @@ def train_embedding_generator(dataset):
     return toreturn
 
 def formality_loss(dataset):
+    """_summary_
+    This function takes in a list of sentences and uses a pre-trained RoBERTa-based formality ranker model 
+    from Hugging Face to calculate the formality score of each sentence
+
+Parameters:
+
+    Args:
+        dataset (List[str]): A list of strings where each string is a sentence. 
+
+    Returns:
+       a tensor containing formality scores for each of the input sentences.
+    """
     # gets the tokenizer and pretrained model
     tokenizer = AutoTokenizer.from_pretrained("s-nlp/roberta-base-formality-ranker")
     model = AutoModelForSequenceClassification.from_pretrained("s-nlp/roberta-base-formality-ranker")
