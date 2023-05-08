@@ -21,9 +21,9 @@ Our model is a supervised classification model, with news statements as our data
 ### Class functionalities
 
 - `preprocess.py`: provides functionality for splitting the liar dataset into train and test sets, tokenizing the sentences, padding the tensors to the same length, and reshaping the tensors to be used in a model. The output is saved to a JSON file, and the function returns the processed dataset in addition to the train and test sets and their corresponding labels.
-- `datasetClass.py`: represents a dataset of fake news examples that can be used for training and testing the model
-- `embedding.py`: This class uses various Natural Language Processing (NLP) techniques and models to analyze the sentiment, formality and embeddings of text data. It uses transformers such as AutoTokenizer and AutoModelForSequenceClassification from the Hugging Face library to predict sentiment scores for each sentence in a given dataset. It also uses SentenceTransformer, which is a neural network-based model, to generate embeddings for each sentence. Additionally, it uses a pre-trained RoBERTa-based formality ranker model from Hugging Face to calculate the formality score of each sentence.
--
+- `MLP.py`: defines our Multi-layer perception class used to classify our data. It takes in the dimensions of the input, predefined hidden layer dimensions, and an output dimension. It also defines a forward function that takes in an input and returns the output of the model.
+- `train_embedding.py`: This class uses various Natural Language Processing (NLP) techniques and models to analyze the sentiment, formality and embeddings of text data. It uses transformers such as AutoTokenizer and AutoModelForSequenceClassification from the Hugging Face library to predict sentiment scores for each sentence in a given dataset. It also uses SentenceTransformer, which is a neural network-based model, to generate embeddings for each sentence. Additionally, it uses a pre-trained RoBERTa-based formality ranker model from Hugging Face to calculate the formality score of each sentence.
+- `test_mlp.py`: This class loads the save weights from train_embedding.py and uses them to predict the labels of the test set. It then calculates the accuracy of the model and prints it out. Additionally, it has a function that prints the sentence, the correctness, the formality score, and the sentiment score of each sentence in the test set.
 
 ### Model Accuracy
 
@@ -51,6 +51,10 @@ Download the files below from https://huggingface.co/bert-base-uncased/tree/main
 
 ### How to run..
 
+- `python3 train_embedding.py` to train the model
+- `python3 test_mlp.py` to test the model
+
 #### Tests
 
--
+- `python3 test_mlp.py` to test the model
+- We test our model by running it on the test set and calculating the accuracy of the model.

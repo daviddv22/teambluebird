@@ -2,8 +2,6 @@ from datasets import load_dataset
 # import the tokenizer used in splitting the dataset
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-
-from datasetClass import FakeNewsDataset
 import json
 
 # save the dataset to a file to be used in other files
@@ -47,9 +45,7 @@ def split_dataset():
     train_x = train_x.reshape(train_x.shape[0], train_x.shape[1], 1)
     test_x = test_x.reshape(test_x.shape[0], test_x.shape[1], 1)
 
-    # raw_text, train_y, test_x, test_y = split_dataset()
-    # dataset = FakeNewsDataset(train_x, tokenizer)
-     # save the data to a JSON file
+    # save the data to a JSON file
     data = {
         "train_x": train_x.tolist(),
         "train_y": train_y,
