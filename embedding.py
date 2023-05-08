@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import GridSearchCV
 
 
 def sentiment_scores(dataset):
@@ -68,8 +69,8 @@ labels = torch.tensor(labels).reshape(len(labels), 1)
 test_labels = list(map(lambda x: float(1) if x == float(1) or x == float(2) else float(0), list(map(float, raw_test_y))))
 test_labels = torch.tensor(test_labels).reshape(len(test_labels), 1)
 
-text = "After stealing money from the bank vault, the bank robber was seen " \
-       "fishing on the Mississippi river bank."
+# text = "After stealing money from the bank vault, the bank robber was seen " \
+#        "fishing on the Mississippi river bank."
 # embedding = train_embedding_generator(raw_x)
 # formality_score = formality_loss(raw_x) # Get from RoBERTa Model
 # sentiment_score = sentiment_scores(raw_x)
@@ -83,6 +84,10 @@ text = "After stealing money from the bank vault, the bank robber was seen " \
 embedding = torch.load('embedding.pt')
 formality_score = torch.load('formality_score.pt')
 sentiment_score = torch.load('sentiment_score.pt')
+
+# normalize the sentiment score
+sentiment_score = (sentiment_score - sentiment_score.min())/(sentiment_score.max() - sentiment_score.min())
+
 # input_dim = len(embedding[0]) + formality_score.shape[0] + sentiment_score.shape[0]
                             
                             #385 #769
@@ -127,14 +132,16 @@ formality_score = formality_score.reshape(formality_score.shape[0], 1)
 sentiment_score = sentiment_score.reshape(sentiment_score.shape[0], 1)
 model_ip = torch.cat((torch.tensor(embedding) , formality_score), 1)
 print(model_ip.shape)
-model_ip = torch.cat((model_ip, sentiment_score), 1)
+# model_ip = torch.cat((model_ip, sentiment_score), 1)
 print(model_ip.shape)
+# model_ip = torch.tensor(embedding)
 
 # reshape formality score
 test_formality_score = test_formality_score.reshape(test_formality_score.shape[0], 1)
 test_sentiment_score = test_sentiment_score.reshape(test_sentiment_score.shape[0], 1)
 test_model_ip = torch.cat((torch.tensor(test_embedding) , test_formality_score), 1)
-test_model_ip = torch.cat((test_model_ip, test_sentiment_score), 1)
+# test_model_ip = torch.cat((test_model_ip, test_sentiment_score), 1)
+# test_model_ip = torch.tensor(test_embedding)
 
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -177,7 +184,7 @@ class MLP(nn.Module):
         return out
 
 # Define your model hyperparameters
-input_dim = 386
+input_dim = 385
 hidden_dim = 256
 hidden_dim1 = 128
 hidden_dim2 = 64
@@ -191,25 +198,25 @@ criterion = nn.BCELoss()
 # Define your optimizer
 
 
-num_epochs = 50
-decayRate = 2.3
-inital_learning_rate = 0.02
+num_epochs = 25
+decayRate = 2.2
+inital_learning_rate = 0.025
 
-# for epoch in range(num_epochs):
-#     learning_rate = (1/(1+decayRate*epoch))*inital_learning_rate
-#     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-#     for i, data in tqdm(enumerate(model_ip)):
-#         inputs = data
-#         label = labels[i]
-#         optimizer.zero_grad()
-#         outputs = model(inputs)
-#         loss = criterion(outputs, label)
-#         loss.backward()
-#         optimizer.step()
+for epoch in range(num_epochs):
+    learning_rate = (1/(1+decayRate*epoch))*inital_learning_rate
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    for i, data in tqdm(enumerate(model_ip)):
+        inputs = data
+        label = labels[i]
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, label)
+        loss.backward()
+        optimizer.step()
 
-# # save the model
-# torch.save(model.state_dict(), 'model.ckpt2')
-
+# save the model
+torch.save(model.state_dict(), 'model.ckpt2')
+# Accuracy of the model on the test images: 54.47906523855891 %
 # load the model
 model = MLP(input_dim, hidden_dim, output_dim)
 model.load_state_dict(torch.load('model.ckpt2'))
@@ -228,36 +235,36 @@ with torch.no_grad():
         correct += (predicted == label).sum().item()
     print('Accuracy of the model on the test images: {} %'.format(100 * correct / test_labels.size(0)))
 
-for item in results[:10]:
-    line = raw_test_x[item[0]]
-    correct = 'Correct' if item[1] == item[2] else 'Incorrect'
-    toprint = raw_test_x[item[0]] + '\t' + correct + '\t'
-    tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
-    model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+# for item in results[:10]:
+#     line = raw_test_x[item[0]]
+#     correct = 'Correct' if item[1] == item[2] else 'Incorrect'
+#     toprint = raw_test_x[item[0]] + '\t' + correct + '\t'
+#     tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+#     model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
 
-    inputs = tokenizer(line, return_tensors="pt")
-    outputs = model(**inputs)
-    predicted_class = torch.argmax(outputs.logits)
-    if predicted_class == 0:
-        toprint += 'Negative'
-    elif predicted_class == 1:
-        toprint += 'Neutral'
-    elif predicted_class == 2:
-        toprint += 'Positive'
+#     inputs = tokenizer(line, return_tensors="pt")
+#     outputs = model(**inputs)
+#     predicted_class = torch.argmax(outputs.logits)
+#     if predicted_class == 0:
+#         toprint += 'Negative'
+#     elif predicted_class == 1:
+#         toprint += 'Neutral'
+#     elif predicted_class == 2:
+#         toprint += 'Positive'
 
-    tokenizer = AutoTokenizer.from_pretrained("s-nlp/roberta-base-formality-ranker")
-    model = AutoModelForSequenceClassification.from_pretrained("s-nlp/roberta-base-formality-ranker")
+#     tokenizer = AutoTokenizer.from_pretrained("s-nlp/roberta-base-formality-ranker")
+#     model = AutoModelForSequenceClassification.from_pretrained("s-nlp/roberta-base-formality-ranker")
     
-    inputs = tokenizer(line, return_tensors="pt")
+#     inputs = tokenizer(line, return_tensors="pt")
 
-    with torch.no_grad():
-        logits = model(**inputs).logits
+#     with torch.no_grad():
+#         logits = model(**inputs).logits
 
-    predicted_class_id = logits.argmax().item()
+#     predicted_class_id = logits.argmax().item()
     
-    if predicted_class_id == 0:
-        toprint += ' Informal'
-    elif predicted_class_id == 1:
-        toprint += ' Formal'
+#     if predicted_class_id == 0:
+#         toprint += ' Informal'
+#     elif predicted_class_id == 1:
+#         toprint += ' Formal'
 
-    print(toprint)
+#     print(toprint)
